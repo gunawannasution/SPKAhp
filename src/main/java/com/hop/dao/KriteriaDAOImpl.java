@@ -8,16 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class KriteriaDAOImpl implements KriteriaDAO {
-    private final Connection connection;
-
+   
     public KriteriaDAOImpl() {
-        this.connection = DBConnection.getConnection();
+        
     }
 
     @Override
     public boolean insert(Kriteria kriteria) {
         String sql = "INSERT INTO kriteria (kode, nama, keterangan, bobot) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection conn = DBConnection.getConnection();PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, kriteria.getKodeKriteria());
             stmt.setString(2, kriteria.getNamaKriteria());
             stmt.setString(3, kriteria.getKetKriteria());
@@ -44,7 +43,7 @@ public class KriteriaDAOImpl implements KriteriaDAO {
         List<Kriteria> list = new ArrayList<>();
         String sql = "SELECT * FROM kriteria ORDER BY id";
 
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn = DBConnection.getConnection();Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
@@ -67,7 +66,7 @@ public class KriteriaDAOImpl implements KriteriaDAO {
     public Kriteria getById(int id) {
         String sql = "SELECT * FROM kriteria WHERE id = ?";
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
 
             try (ResultSet rs = stmt.executeQuery()) {
@@ -92,7 +91,7 @@ public class KriteriaDAOImpl implements KriteriaDAO {
     public Kriteria getByKode(String kode) {
         String sql = "SELECT * FROM kriteria WHERE kode = ?";
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, kode);
 
             try (ResultSet rs = stmt.executeQuery()) {
@@ -117,7 +116,7 @@ public class KriteriaDAOImpl implements KriteriaDAO {
     public boolean update(Kriteria kriteria) {
         String sql = "UPDATE kriteria SET kode = ?, nama = ?, keterangan = ?, bobot = ? WHERE id = ?";
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, kriteria.getKodeKriteria());
             stmt.setString(2, kriteria.getNamaKriteria());
             stmt.setString(3, kriteria.getKetKriteria());
@@ -135,7 +134,7 @@ public class KriteriaDAOImpl implements KriteriaDAO {
     public boolean updateBobot(String namaKriteria, double bobot) {
         String sql = "UPDATE kriteria SET bobot = ? WHERE nama = ?";
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection();PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setDouble(1, bobot);
             stmt.setString(2, namaKriteria);
 
@@ -152,8 +151,8 @@ public class KriteriaDAOImpl implements KriteriaDAO {
         boolean success = true;
 
         try {
-            connection.setAutoCommit(false);
-            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            DBConnection.getConnection().setAutoCommit(false);
+            try (Connection conn = DBConnection.getConnection();PreparedStatement stmt = conn.prepareStatement(sql)) {
                 for (Kriteria k : kriteriaList) {
                     stmt.setDouble(1, k.getBobot());
                     stmt.setInt(2, k.getIdKriteria());
@@ -169,22 +168,22 @@ public class KriteriaDAOImpl implements KriteriaDAO {
                 }
 
                 if (success) {
-                    connection.commit();
+                    DBConnection.getConnection().commit();
                 } else {
-                    connection.rollback();
+                    DBConnection.getConnection().rollback();
                 }
             }
         } catch (SQLException e) {
             success = false;
             try {
-                connection.rollback();
+                DBConnection.getConnection().rollback();
             } catch (SQLException ex) {
                 System.err.println("Gagal rollback saat update batch: " + ex.getMessage());
             }
             System.err.println("Gagal batch update bobot: " + e.getMessage());
         } finally {
             try {
-                connection.setAutoCommit(true);
+                DBConnection.getConnection().setAutoCommit(true);
             } catch (SQLException e) {
                 System.err.println("Gagal mengatur auto-commit: " + e.getMessage());
             }
@@ -197,7 +196,7 @@ public class KriteriaDAOImpl implements KriteriaDAO {
     public boolean delete(int id) {
         String sql = "DELETE FROM kriteria WHERE id = ?";
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection conn=DBConnection.getConnection();PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -210,7 +209,7 @@ public class KriteriaDAOImpl implements KriteriaDAO {
     public int count() {
         String sql = "SELECT COUNT(*) FROM kriteria";
 
-        try (Statement stmt = connection.createStatement();
+        try (Connection conn=DBConnection.getConnection();Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             if (rs.next()) return rs.getInt(1);
@@ -225,7 +224,7 @@ public class KriteriaDAOImpl implements KriteriaDAO {
     public boolean isKodeExist(String kode) {
         String sql = "SELECT COUNT(*) FROM kriteria WHERE kode = ?";
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection conn=DBConnection.getConnection();PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, kode);
 
             try (ResultSet rs = stmt.executeQuery()) {

@@ -2,13 +2,14 @@ package com.hop.ui;
 
 import com.hop.dao.*;
 import com.hop.model.*;
-
+import net.miginfocom.swing.MigLayout;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
+import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MatrixAlternatifPanel extends JPanel {
 
@@ -18,158 +19,211 @@ public class MatrixAlternatifPanel extends JPanel {
 
     private JTable table;
     private DefaultTableModel model;
+    private JTable tableHasil;
+    private DefaultTableModel modelHasil;
 
     private JComboBox<Alternatif> cbAlternatif;
     private JComboBox<Kriteria> cbKriteria;
     private JTextField tfNilai;
-    private JButton btnSimpan, btnHapus;
-
-    private JButton btnHitungSkor;
-    private JTable tableHasil;
-    private DefaultTableModel modelHasil;
+    private JButton btnSimpan, btnHapus, btnHitungSkor;
 
     public MatrixAlternatifPanel() {
-        setLayout(new BorderLayout(10, 10));
-        setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        initInputPanel();
-        initMainTable();
-        initHasilPanel();
-
-        loadCombos();
-        loadTable();
+        initUI();
+        loadData();
     }
 
-    private void initInputPanel() {
-        setLayout(new BorderLayout(10, 10));
+    private void initUI() {
+        setLayout(new BorderLayout());
+        setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Panel form input vertikal dengan GridBagLayout
-        JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(BorderFactory.createTitledBorder("Masukkan Nilai Alternatif"));
+        // Main panel with shadow effect
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(Color.LIGHT_GRAY),
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+        ));
+        mainPanel.setBackground(Color.WHITE);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.anchor = GridBagConstraints.WEST;  // Rata kiri
+        // Input panel
+        JPanel inputPanel = createInputPanel();
+        mainPanel.add(inputPanel, BorderLayout.NORTH);
 
-        // Baris 0 - Label Alternatif
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        form.add(new JLabel("Alternatif:"), gbc);
-        // Combo Alternatif
-        gbc.gridx = 1;
-        form.add(cbAlternatif = new JComboBox<>(), gbc);
+        // Table panel
+        JPanel tablePanel = createTablePanel();
+        mainPanel.add(tablePanel, BorderLayout.CENTER);
 
-        // Baris 1 - Label Kriteria
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        form.add(new JLabel("Kriteria:"), gbc);
-        // Combo Kriteria
-        gbc.gridx = 1;
-        form.add(cbKriteria = new JComboBox<>(), gbc);
+        // Results panel
+        JPanel resultsPanel = createResultsPanel();
+        mainPanel.add(resultsPanel, BorderLayout.SOUTH);
 
-        // Baris 2 - Label Nilai
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        form.add(new JLabel("Nilai:"), gbc);
-        // TextField Nilai
-        gbc.gridx = 1;
-        form.add(tfNilai = new JTextField(8), gbc);
+        add(mainPanel, BorderLayout.CENTER);
+    }
 
-        // Baris 3 - Panel tombol, satu baris, rata kiri
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.gridwidth = 2;  // menempati 2 kolom
-        JPanel panelButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+    private JPanel createInputPanel() {
+        JPanel panel = new JPanel(new MigLayout("wrap 3, insets 20, gap 20", "[][grow,fill][]", "[]10[]10[]"));
+        panel.setBorder(BorderFactory.createTitledBorder("Input Nilai Alternatif"));
+        panel.setBackground(Color.WHITE);
+
+        // Alternatif combo
+        cbAlternatif = new JComboBox<>();
+        cbAlternatif.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Alternatif) {
+                    setText(((Alternatif) value).getNama());
+                }
+                return this;
+            }
+        });
+
+        // Kriteria combo
+        cbKriteria = new JComboBox<>();
+        cbKriteria.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Kriteria) {
+                    setText(((Kriteria) value).getNamaKriteria());
+                }
+                return this;
+            }
+        });
+
+        tfNilai = new JTextField();
+        tfNilai.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
+        // Buttons
         btnSimpan = new JButton("Simpan");
-        btnHapus = new JButton("Hapus");
-        btnHitungSkor = new JButton("Hitung Skor Alternatif");
-        panelButtons.add(btnSimpan);
-        panelButtons.add(btnHapus);
-        panelButtons.add(btnHitungSkor);
-        form.add(panelButtons, gbc);
-
-        add(form, BorderLayout.NORTH);
-
-        // Inisialisasi event tombol
         btnSimpan.addActionListener(e -> save());
+
+        btnHapus = new JButton("Hapus");
         btnHapus.addActionListener(e -> delete());
+
+        btnHitungSkor = new JButton("Hitung Skor");
         btnHitungSkor.addActionListener(e -> hitungSkorAlternatif());
 
-        // Setup table seperti sebelumnya...
-        model = new DefaultTableModel(new Object[]{"ID", "Alternatif", "Kriteria", "Nilai"}, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
-            }
-        };
-        table = new JTable(model);
-        table.setRowHeight(24);
-        table.getSelectionModel().addListSelectionListener(e -> fillFormFromTable());
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        // Add components
+        panel.add(new JLabel("Alternatif:"));
+        panel.add(cbAlternatif, "growx");
+        panel.add(new JLabel());
+        
+        panel.add(new JLabel("Kriteria:"));
+        panel.add(cbKriteria, "growx");
+        panel.add(new JLabel());
+        
+        panel.add(new JLabel("Nilai:"));
+        panel.add(tfNilai, "growx");
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        buttonPanel.add(btnSimpan);
+        buttonPanel.add(btnHapus);
+        buttonPanel.add(btnHitungSkor);
+        
+        panel.add(buttonPanel, "span 3, growx");
 
-        // Setup panel hasil perhitungan di bawah
-        initHasilPanel();
+        return panel;
     }
 
+    private JPanel createTablePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Data Matrix Alternatif"));
 
-
-    private void initMainTable() {
         model = new DefaultTableModel(new Object[]{"ID", "Alternatif", "Kriteria", "Nilai"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
+
         table = new JTable(model);
-        table.setRowHeight(24);
+        table.setRowHeight(25);
         table.getSelectionModel().addListSelectionListener(e -> fillFormFromTable());
 
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(BorderFactory.createTitledBorder("Data Matrix Alternatif"));
-        add(scrollPane, BorderLayout.CENTER);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
     }
 
-    private void initHasilPanel() {
-        JPanel hasilPanel = new JPanel(new BorderLayout(5,5));
-        hasilPanel.setBorder(BorderFactory.createTitledBorder("Hasil Perhitungan Skor Alternatif"));
+    private JPanel createResultsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Hasil Perhitungan Skor Alternatif"));
 
-        btnHitungSkor = new JButton("Hitung Skor Alternatif");
-        btnHitungSkor.addActionListener(e -> hitungSkorAlternatif());
-
-        modelHasil = new DefaultTableModel(new Object[]{"Alternatif", "Skor"}, 0) {
+        modelHasil = new DefaultTableModel(new Object[]{"Peringkat", "Alternatif", "Skor", "Rekomendasi"}, 0) {
             @Override
             public boolean isCellEditable(int r, int c) { return false; }
         };
+
         tableHasil = new JTable(modelHasil);
-        tableHasil.setRowHeight(24);
+        tableHasil.setRowHeight(25);
 
-        hasilPanel.add(btnHitungSkor, BorderLayout.NORTH);
-        hasilPanel.add(new JScrollPane(tableHasil), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(tableHasil);
+        panel.add(scrollPane, BorderLayout.CENTER);
 
-        add(hasilPanel, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private void loadData() {
+        loadCombos();
+        loadTable();
     }
 
     private void loadCombos() {
-        cbAlternatif.removeAllItems();
-        alternatifDAO.getAll().forEach(cbAlternatif::addItem);
-
-        cbKriteria.removeAllItems();
-        kriteriaDAO.getAll().forEach(cbKriteria::addItem);
+        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                List<Alternatif> alternatifs = alternatifDAO.getAll();
+                List<Kriteria> kriterias = kriteriaDAO.getAll();
+                
+                SwingUtilities.invokeLater(() -> {
+                    cbAlternatif.removeAllItems();
+                    alternatifs.forEach(cbAlternatif::addItem);
+                    
+                    cbKriteria.removeAllItems();
+                    kriterias.forEach(cbKriteria::addItem);
+                });
+                return null;
+            }
+        };
+        worker.execute();
     }
 
     private void loadTable() {
-        model.setRowCount(0);
-        List<MatrixAlternatif> list = matrixDAO.getAll();
-        for (MatrixAlternatif m : list) {
-            Alternatif a = alternatifDAO.getById(m.getIdAlternatif());
-            Kriteria k = kriteriaDAO.getById(m.getIdKriteria());
-            model.addRow(new Object[]{
-                    m.getId(),
-                    a != null ? a.getNama() : "–",
-                    k != null ? k.getNamaKriteria() : "–",
-                    m.getNilai()
-            });
-        }
+        SwingWorker<List<MatrixAlternatif>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected List<MatrixAlternatif> doInBackground() throws Exception {
+                return matrixDAO.getAll();
+            }
+            
+            @Override
+            protected void done() {
+                try {
+                    model.setRowCount(0);
+                    List<MatrixAlternatif> list = get();
+                    
+                    for (MatrixAlternatif m : list) {
+                        Alternatif a = alternatifDAO.getById(m.getIdAlternatif());
+                        Kriteria k = kriteriaDAO.getById(m.getIdKriteria());
+                        model.addRow(new Object[]{
+                            m.getId(),
+                            a != null ? a.getNama() : "N/A",
+                            k != null ? k.getNamaKriteria() : "N/A",
+                            String.format("%.2f", m.getNilai())
+                        });
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(MatrixAlternatifPanel.this,
+                            "Gagal memuat data: " + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        worker.execute();
     }
 
     private void fillFormFromTable() {
@@ -200,7 +254,7 @@ public class MatrixAlternatifPanel extends JPanel {
         String sn = tfNilai.getText().trim();
 
         if (alt == null || kri == null || sn.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Isi semua field", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Isi semua field", "Peringatan", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -214,91 +268,136 @@ public class MatrixAlternatifPanel extends JPanel {
             MatrixAlternatif existing = matrixDAO.getByAlternatifAndKriteria(alt.getId(), kri.getIdKriteria());
             MatrixAlternatif m = new MatrixAlternatif(
                     existing != null ? existing.getId() : 0,
-                    alt.getId(), kri.getIdKriteria(), val
+                    alt.getId(), 
+                    kri.getIdKriteria(), 
+                    val
             );
 
             boolean ok = existing != null ? matrixDAO.update(m) : matrixDAO.insert(m);
             JOptionPane.showMessageDialog(this,
-                    ok ? "Tersimpan" : "Gagal simpan",
+                    ok ? "Data berhasil disimpan" : "Gagal menyimpan data",
                     "Info",
                     ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
-            loadTable();
+            
+            if (ok) {
+                loadTable();
+                clearForm();
+            }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Nilai harus angka", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Nilai harus berupa angka", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void delete() {
         int r = table.getSelectedRow();
         if (r == -1) {
-            JOptionPane.showMessageDialog(this, "Pilih baris dulu", "Info", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Pilih data yang akan dihapus", "Info", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        Alternatif alt = (Alternatif) cbAlternatif.getSelectedItem();
-        Kriteria kri = (Kriteria) cbKriteria.getSelectedItem();
+        int idAlt = (int) model.getValueAt(r, 1); // Get alternatif ID from selected row
+        int idKri = (int) model.getValueAt(r, 2); // Get kriteria ID from selected row
 
-        int yes = JOptionPane.showConfirmDialog(this, "Hapus nilai ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
-        if (yes == JOptionPane.YES_OPTION) {
-            boolean ok = matrixDAO.delete(alt.getId(), kri.getIdKriteria());
+        int confirm = JOptionPane.showConfirmDialog(
+            this, 
+            "Apakah Anda yakin ingin menghapus data ini?", 
+            "Konfirmasi", 
+            JOptionPane.YES_NO_OPTION
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            boolean ok = matrixDAO.delete(idAlt, idKri);
             JOptionPane.showMessageDialog(this,
-                    ok ? "Terhapus" : "Gagal hapus",
-                    "Info",
-                    ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
-            loadTable();
+                ok ? "Data berhasil dihapus" : "Gagal menghapus data",
+                "Info",
+                ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
+            
+            if (ok) {
+                loadTable();
+                clearForm();
+            }
         }
     }
 
     private void hitungSkorAlternatif() {
-        try {
-            List<Kriteria> kriteriaList = kriteriaDAO.getAll();
-            Map<Integer, Double> bobotKriteria = new HashMap<>();
-            for (Kriteria k : kriteriaList) {
-                bobotKriteria.put(k.getIdKriteria(), Math.max(0, k.getBobot()));
-            }
+        SwingWorker<Map<String, Double>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected Map<String, Double> doInBackground() throws Exception {
+                List<Kriteria> kriteriaList = kriteriaDAO.getAll();
+                List<Alternatif> alternatifList = alternatifDAO.getAll();
+                List<MatrixAlternatif> allMatrixValues = matrixDAO.getAll();
 
-            List<Alternatif> alternatifList = alternatifDAO.getAll();
+                // Group by kriteria
+                Map<Integer, List<MatrixAlternatif>> nilaiPerKriteria = allMatrixValues.stream()
+                    .collect(Collectors.groupingBy(MatrixAlternatif::getIdKriteria));
 
-            Map<Integer, List<MatrixAlternatif>> nilaiPerKriteria = new HashMap<>();
-            for (Kriteria k : kriteriaList) {
-                List<MatrixAlternatif> list = matrixDAO.getByKriteria(k.getIdKriteria());
-                nilaiPerKriteria.put(k.getIdKriteria(), list != null ? list : Collections.emptyList());
-            }
+                // Calculate sums per criteria
+                Map<Integer, Double> jumlahPerKriteria = nilaiPerKriteria.entrySet().stream()
+                    .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().stream().mapToDouble(MatrixAlternatif::getNilai).sum()
+                    ));
 
-            Map<Integer, Double> jumlahPerKriteria = new HashMap<>();
-            for (Kriteria k : kriteriaList) {
-                double sum = nilaiPerKriteria.get(k.getIdKriteria()).stream()
-                        .mapToDouble(MatrixAlternatif::getNilai)
-                        .sum();
-                jumlahPerKriteria.put(k.getIdKriteria(), sum);
-            }
+                // Calculate scores
+                Map<String, Double> skorAlternatif = new HashMap<>();
+                for (Alternatif a : alternatifList) {
+                    double skor = 0.0;
+                    for (Kriteria k : kriteriaList) {
+                        double nilai = nilaiPerKriteria.getOrDefault(k.getIdKriteria(), Collections.emptyList()).stream()
+                                .filter(m -> m.getIdAlternatif() == a.getId())
+                                .mapToDouble(MatrixAlternatif::getNilai)
+                                .findFirst().orElse(0.0);
 
-            Map<String, Double> skorAlternatif = new HashMap<>();
-            for (Alternatif a : alternatifList) {
-                double skor = 0.0;
-                for (Kriteria k : kriteriaList) {
-                    double nilai = nilaiPerKriteria.get(k.getIdKriteria()).stream()
-                            .filter(m -> m.getIdAlternatif() == a.getId())
-                            .map(MatrixAlternatif::getNilai)
-                            .findFirst().orElse(0.0);
-
-                    double sumKri = jumlahPerKriteria.get(k.getIdKriteria());
-                    double norm = sumKri == 0 ? 0 : nilai / sumKri;
-                    skor += norm * bobotKriteria.getOrDefault(k.getIdKriteria(), 0.0);
+                        double sumKri = jumlahPerKriteria.getOrDefault(k.getIdKriteria(), 1.0);
+                        double norm = sumKri == 0 ? 0 : nilai / sumKri;
+                        skor += norm * k.getBobot();
+                    }
+                    skorAlternatif.put(a.getNama(), skor);
                 }
-                skorAlternatif.put(a.getNama(), skor);
+
+                return skorAlternatif;
             }
+            
+            @Override
+            protected void done() {
+                try {
+                    Map<String, Double> skorAlternatif = get();
+                    modelHasil.setRowCount(0);
+                    
+                    // Add ranking and recommendation
+                    int rank = 1;
+                    List<Map.Entry<String, Double>> sorted = skorAlternatif.entrySet().stream()
+                            .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                            .collect(Collectors.toList());
+                    
+                    for (Map.Entry<String, Double> entry : sorted) {
+                        String recommendation = rank <= 3 ? "Direkomendasikan" : "-";
+                        modelHasil.addRow(new Object[]{
+                            rank,
+                            entry.getKey(),
+                            String.format("%.4f", entry.getValue()),
+                            recommendation
+                        });
+                        rank++;
+                    }
+                    
+                    JOptionPane.showMessageDialog(MatrixAlternatifPanel.this,
+                        "Perhitungan skor alternatif berhasil", 
+                        "Sukses", 
+                        JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(MatrixAlternatifPanel.this,
+                        "Gagal menghitung skor alternatif:\n" + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        worker.execute();
+    }
 
-            modelHasil.setRowCount(0);
-            skorAlternatif.entrySet().stream()
-                    .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                    .forEach(entry -> modelHasil.addRow(new Object[]{entry.getKey(), String.format("%.4f", entry.getValue())}));
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Gagal menghitung skor alternatif:\n" + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
+    private void clearForm() {
+        tfNilai.setText("");
+        table.clearSelection();
     }
 }

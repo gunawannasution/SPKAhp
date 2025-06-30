@@ -9,11 +9,9 @@ import utils.DBConnection;
 import static utils.DBConnection.getConnection;
 
 public class MatrixDAOImpl implements MatrixDAO{
-    private final Connection conn;
-
-     
+    
     public MatrixDAOImpl(){
-        this.conn = DBConnection.getConnection();
+        
     }
    
     @Override
