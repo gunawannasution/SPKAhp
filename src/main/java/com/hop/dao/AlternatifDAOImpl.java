@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import utils.DBConnection;
-
 public class AlternatifDAOImpl implements AlternatifDAO {
     public AlternatifDAOImpl() {}
 
@@ -21,6 +20,8 @@ public class AlternatifDAOImpl implements AlternatifDAO {
             ps.setString(2, alt.getNama());
             ps.setString(3, alt.getJabatan());
             ps.setString(4, alt.getAlamat());
+            
+            // executeUpdate mengembalikan jumlah baris yg terpengaruh
             return ps.executeUpdate() > 0;
             
         } catch (SQLException ex) {
@@ -40,6 +41,7 @@ public class AlternatifDAOImpl implements AlternatifDAO {
             ps.setString(3, alt.getJabatan());
             ps.setString(4, alt.getAlamat());
             ps.setInt(5, alt.getId());
+            
             return ps.executeUpdate() > 0;
             
         } catch (SQLException ex) {
@@ -87,6 +89,7 @@ public class AlternatifDAOImpl implements AlternatifDAO {
         return list;
     }
 
+    // Cek apakah NIK sudah ada, kecuali data dengan excludeId (untuk update)
     @Override
     public boolean isNikExists(String nik, int excludeId) {
         String sql = "SELECT id FROM alternatif WHERE nik = ? AND id <> ?";
@@ -95,8 +98,9 @@ public class AlternatifDAOImpl implements AlternatifDAO {
             
             ps.setString(1, nik);
             ps.setInt(2, excludeId);
+            
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
+                return rs.next(); 
             }
         } catch (SQLException ex) {
             Logger.getLogger(AlternatifDAOImpl.class.getName()).log(Level.SEVERE, null, ex);
@@ -104,6 +108,7 @@ public class AlternatifDAOImpl implements AlternatifDAO {
         return false;
     }
 
+    // cek nik sebelum insert data, jika ada maka tidak bisa ditambahkan
     @Override
     public boolean isNikExists(String nik) {
         String sql = "SELECT id FROM alternatif WHERE nik = ?";
@@ -120,6 +125,7 @@ public class AlternatifDAOImpl implements AlternatifDAO {
         return false;
     }
 
+    // Cari data alternatif berdasarkan id
     @Override
     public Alternatif getById(int id) {
         String sql = "SELECT * FROM alternatif WHERE id = ?";
@@ -141,6 +147,6 @@ public class AlternatifDAOImpl implements AlternatifDAO {
         } catch (SQLException e) {
             Logger.getLogger(AlternatifDAOImpl.class.getName()).log(Level.SEVERE, null, e);
         }
-        return null;
+        return null;  
     }
 }

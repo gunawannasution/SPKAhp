@@ -11,357 +11,267 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.util.List;
 
+/**
+ * Panel untuk mengelola data kriteria (tambah, edit, hapus, cetak)
+ */
 public class KriteriaPanel extends JPanel {
+
+    // === Warna yang digunakan di panel ===
+    private final Color WARNA_UTAMA = new Color(63, 81, 181);
+    private final Color WARNA_HAPUS = new Color(233, 30, 99);
+    private final Color WARNA_CETAK = new Color(0, 150, 136);
+    private final Color LATAR_BELAKANG = new Color(250, 250, 250);
     
-    private KriteriaDAO kriteria = new KriteriaDAOImpl();
-    private static final Color PRIMARY_COLOR = new Color(63, 81, 181);
-    private static final Color SECONDARY_COLOR = new Color(233, 30, 99);
-    private static final Color BACKGROUND_COLOR = new Color(250, 250, 250);
-    private static final Color TABLE_HEADER_COLOR = new Color(63, 81, 181);
-    private static final Color TABLE_HEADER_TEXT_COLOR = Color.WHITE;
-    
-    private DefaultTableModel model;
+    // === Komponen utama ===
     private JTable table;
+    private DefaultTableModel model;
     private JTextField tKode, tNama, tKet, tBobot;
-    private JButton btnTambah, btnUpdate, btnHapus,btnCetak;
-    private KriteriaDAO dao;
+    private JButton btnTambah, btnUpdate, btnHapus, btnCetak;
+
+    // DAO (data akses)
+    private KriteriaDAO dao = new KriteriaDAOImpl();
+
+    // ID baris yang sedang dipilih
     private int selectedId = -1;
 
     public KriteriaPanel() {
         setLayout(new BorderLayout(10, 10));
-        setBackground(BACKGROUND_COLOR);
+        setBackground(LATAR_BELAKANG);
         setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        dao = new KriteriaDAOImpl();
-        
-        // Panel utama dengan border dan shadow effect
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBackground(BACKGROUND_COLOR);
-        mainPanel.setBorder(BorderFactory.createCompoundBorder(
+        // Panel utama
+        JPanel panelUtama = new JPanel(new BorderLayout(10, 10));
+        panelUtama.setBackground(LATAR_BELAKANG);
+        panelUtama.setBorder(BorderFactory.createCompoundBorder(
             new MatteBorder(1, 1, 1, 1, new Color(220, 220, 220)),
             new EmptyBorder(10, 10, 10, 10)
         ));
-        
-        // Buat tabel dengan styling modern
-        createTable();
-        
-        // Buat form input dengan styling modern
-        mainPanel.add(createFormPanel(), BorderLayout.NORTH);
-        mainPanel.add(new JScrollPane(table), BorderLayout.CENTER);
-        
-        add(mainPanel, BorderLayout.CENTER);
-        loadData();
+
+        // Buat dan tambahkan komponen
+        buatTabel();
+        panelUtama.add(buatForm(), BorderLayout.NORTH);
+        panelUtama.add(new JScrollPane(table), BorderLayout.CENTER);
+
+        add(panelUtama, BorderLayout.CENTER);
+        muatData();
     }
 
-    private void createTable() {
-        model = new DefaultTableModel(new String[]{"ID", "Kode", "Nama Kriteria", "Keterangan", "Bobot"}, 0) {
-            @Override
-            public boolean isCellEditable(int row, int col) {
+    /**
+     * Buat tabel dan atur tampilannya
+     */
+    private void buatTabel() {
+        model = new DefaultTableModel(new String[]{"ID", "Kode", "Nama", "Keterangan", "Bobot"}, 0) {
+            public boolean isCellEditable(int row, int column) {
                 return false;
             }
-            
-            @Override
             public Class<?> getColumnClass(int column) {
                 return column == 0 ? Integer.class : String.class;
             }
         };
 
         table = new JTable(model);
-        
-        // Styling tabel
-        table.setRowHeight(32);
-        table.setFillsViewportHeight(true);
+        table.setRowHeight(30);
         table.setShowGrid(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setSelectionBackground(new Color(220, 220, 255));
-        table.setSelectionForeground(Color.BLACK);
-        
-        // Styling header tabel
+        table.setSelectionBackground(new Color(220, 230, 255));
+
+        // Header
         JTableHeader header = table.getTableHeader();
-        header.setBackground(TABLE_HEADER_COLOR);
-        header.setForeground(TABLE_HEADER_TEXT_COLOR);
-        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setPreferredSize(new Dimension(header.getWidth(), 35));
-        
-        // Renderer untuk tengahkan isi tabel
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        header.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        header.setBackground(WARNA_UTAMA);
+        header.setForeground(Color.WHITE);
+
+        // Tengah semua isi kolom
+        DefaultTableCellRenderer center = new DefaultTableCellRenderer();
+        center.setHorizontalAlignment(JLabel.CENTER);
         for (int i = 0; i < table.getColumnCount(); i++) {
-            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+            table.getColumnModel().getColumn(i).setCellRenderer(center);
         }
-        
-        // Warna baris bergantian
+
+        // Baris selang-seling warna
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                
-                if (!isSelected) {
-                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 248, 248));
-                }
-                
+            public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean focus, int row, int col) {
+                Component c = super.getTableCellRendererComponent(t, val, sel, focus, row, col);
+                if (!sel) c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(245, 245, 245));
                 return c;
             }
         });
 
+        // Event saat memilih baris
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && table.getSelectedRow() != -1) {
                 int row = table.getSelectedRow();
                 selectedId = (int) model.getValueAt(row, 0);
                 tKode.setText(model.getValueAt(row, 1).toString());
                 tNama.setText(model.getValueAt(row, 2).toString());
-                Object keterangan = model.getValueAt(row, 3);
-                tKet.setText(keterangan != null ? keterangan.toString() : "");
-                Object bobot = model.getValueAt(row, 4);
-                tBobot.setText(bobot != null ? bobot.toString() : "%.4f");
+                tKet.setText(model.getValueAt(row, 3).toString());
+                tBobot.setText(model.getValueAt(row, 4).toString());
             }
         });
     }
 
-    private JPanel createFormPanel() {
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBackground(Color.WHITE);
-        formPanel.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(new Color(200, 200, 200)), 
-            "Form Kriteria",
-            TitledBorder.LEFT,
-            TitledBorder.TOP,
-            new Font("Segoe UI", Font.BOLD, 12),
-            new Color(80, 80, 80)));
+    /**
+     * Buat form input data kriteria + tombol
+     */
+    private JPanel buatForm() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createTitledBorder("Form Kriteria"));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 8, 8, 8);
-        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(6, 6, 6, 6);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Buat text field dengan styling modern
-        tKode = createTextField("Contoh: C1");
-        tNama = createTextField("Contoh: Kompetensi");
-        tKet = createTextField("Contoh: Dinilai dari hasil pelatihan");
-        tBobot = createTextField("Contoh: 0.25");
+        // Text field
+        tKode = buatTextField("Contoh: C1");
+        tNama = buatTextField("Contoh: Kompetensi");
+        tKet = buatTextField("Contoh: Berdasarkan pelatihan");
+        tBobot = buatTextField("Contoh: 0.25");
 
-        // Row 0: Kode Kriteria
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 0;
-        formPanel.add(createFormLabel("Kode Kriteria:"), gbc);
+        // Label & input
+        tambahFormItem(panel, gbc, 0, "Kode:", tKode);
+        tambahFormItem(panel, gbc, 1, "Nama:", tNama);
+        tambahFormItem(panel, gbc, 2, "Keterangan:", tKet);
+        tambahFormItem(panel, gbc, 3, "Bobot:", tBobot);
 
-        gbc.gridx = 1;
-        gbc.weightx = 1;
-        formPanel.add(tKode, gbc);
+        // Tombol-tombol aksi
+        btnTambah = buatButton("Tambah", WARNA_UTAMA, e -> tambah());
+        btnUpdate = buatButton("Update", new Color(255, 152, 0), e -> update());
+        btnHapus = buatButton("Hapus", WARNA_HAPUS, e -> hapus());
+        btnCetak = buatButton("Cetak", WARNA_CETAK, e -> cetak());
 
-        // Row 1: Nama Kriteria
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.weightx = 0;
-        formPanel.add(createFormLabel("Nama Kriteria:"), gbc);
+        JPanel panelBtn = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        panelBtn.setBackground(Color.WHITE);
+        panelBtn.add(btnTambah);
+        panelBtn.add(btnUpdate);
+        panelBtn.add(btnHapus);
+        panelBtn.add(btnCetak);
 
-        gbc.gridx = 1;
-        gbc.weightx = 1;
-        formPanel.add(tNama, gbc);
-
-        // Row 2: Keterangan
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.weightx = 0;
-        formPanel.add(createFormLabel("Keterangan:"), gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 1;
-        formPanel.add(tKet, gbc);
-
-        // Row 3: Bobot
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.weightx = 0;
-        formPanel.add(createFormLabel("Bobot:"), gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 1;
-        formPanel.add(tBobot, gbc);
-
-        // Panel tombol
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.WEST;
-        
-        btnTambah = createStyledButton("Tambah", PRIMARY_COLOR);
-        btnUpdate = createStyledButton("Update", new Color(255, 152, 0));
-        btnHapus = createStyledButton("Hapus", SECONDARY_COLOR);
-        btnCetak = createStyledButton("Print", new Color(0, 150, 136));
-        
-        btnTambah.addActionListener(e -> tambahKriteria());
-        btnUpdate.addActionListener(e -> updateKriteria());
-        btnHapus.addActionListener(e -> hapusKriteria());
-        btnCetak.addActionListener(e -> cetakLaporan());
+        panel.add(panelBtn, gbc);
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        btnPanel.setBackground(Color.WHITE);
-        btnPanel.add(btnTambah);
-        btnPanel.add(btnUpdate);
-        btnPanel.add(btnHapus);
-        btnPanel.add(btnCetak);
-        
-        formPanel.add(btnPanel, gbc);
-
-        return formPanel;
+        return panel;
     }
 
-    private JLabel createFormLabel(String text) {
-        JLabel label = new JLabel(text);
-        label.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        label.setForeground(new Color(80, 80, 80));
-        return label;
+    private void tambahFormItem(JPanel panel, GridBagConstraints gbc, int row, String label, JTextField field) {
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        panel.add(new JLabel(label), gbc);
+        gbc.gridx = 1; gbc.weightx = 1;
+        panel.add(field, gbc);
     }
 
-    private JTextField createTextField(String placeholder) {
+    private JTextField buatTextField(String placeholder) {
         JTextField tf = new JTextField();
         tf.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        tf.putClientProperty("JTextField.placeholderText", placeholder); // Support dari LookAndFeel tertentu
         tf.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(new Color(200, 200, 200)),
-            BorderFactory.createEmptyBorder(8, 12, 8, 12)
+            new LineBorder(Color.LIGHT_GRAY),
+            new EmptyBorder(8, 10, 8, 10)
         ));
-        tf.putClientProperty("JTextField.placeholderText", placeholder);
         return tf;
     }
 
-    private JButton createStyledButton(String text, Color bgColor) {
-        JButton button = new JButton(text);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        button.setBackground(bgColor);
-        button.setForeground(Color.WHITE);
-        button.setFocusPainted(false);
-        button.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(bgColor.darker(), 1, true),
-            BorderFactory.createEmptyBorder(8, 20, 8, 20)
-        ));
-        
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                button.setBackground(bgColor.darker());
-            }
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                button.setBackground(bgColor);
-            }
-        });
-        
-        return button;
+    private JButton buatButton(String teks, Color warna, java.awt.event.ActionListener action) {
+        JButton btn = new JButton(teks);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btn.setBackground(warna);
+        btn.setForeground(Color.WHITE);
+        btn.setFocusPainted(false);
+        btn.addActionListener(action);
+        return btn;
     }
 
-    private void loadData() {
+    /**
+     * Load ulang data dari database
+     */
+    private void muatData() {
         model.setRowCount(0);
-        List<Kriteria> list = dao.getAll();
-        for (Kriteria k : list) {
-            model.addRow(new Object[]{
-                k.getIdKriteria(),
-                k.getKodeKriteria(),
-                k.getNamaKriteria(),
-                k.getKetKriteria(),
-                k.getBobot()
-            });
+        for (Kriteria k : dao.getAll()) {
+            model.addRow(new Object[]{k.getIdKriteria(), k.getKodeKriteria(), k.getNamaKriteria(), k.getKetKriteria(), k.getBobot()});
         }
-        clearForm();
+        kosongkanForm();
     }
 
-    private void tambahKriteria() {
-        String kode = tKode.getText().trim();
-        String nama = tNama.getText().trim();
-        String ket = tKet.getText().trim();
-        String bobotText = tBobot.getText().trim();
-
-        if (kode.isEmpty() || nama.isEmpty() || bobotText.isEmpty()) {
-            showMessage("Kode, Nama, dan Bobot wajib diisi!", "Peringatan", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+    private void tambah() {
+        if (!validasiInput()) return;
 
         try {
-            double bobot = Double.parseDouble(bobotText);
-            dao.insert(new Kriteria(0, kode, nama, ket, bobot));
-            loadData();
-            showMessage("Data berhasil ditambahkan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            dao.insert(new Kriteria(0, tKode.getText(), tNama.getText(), tKet.getText(), Double.parseDouble(tBobot.getText())));
+            muatData();
+            info("Data berhasil ditambahkan!");
         } catch (NumberFormatException e) {
-            showMessage("Bobot harus berupa angka!", "Input Error", JOptionPane.ERROR_MESSAGE);
+            error("Bobot harus berupa angka desimal!");
         }
     }
 
-    private void updateKriteria() {
+    private void update() {
         if (selectedId == -1) {
-            showMessage("Pilih data yang akan diupdate", "Info", JOptionPane.INFORMATION_MESSAGE);
+            info("Pilih data yang ingin diubah terlebih dahulu.");
             return;
         }
 
-        String kode = tKode.getText().trim();
-        String nama = tNama.getText().trim();
-        String ket = tKet.getText().trim();
-        String bobotText = tBobot.getText().trim();
-
-        if (kode.isEmpty() || nama.isEmpty() || bobotText.isEmpty()) {
-            showMessage("Kode, Nama, dan Bobot wajib diisi!", "Peringatan", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        if (!validasiInput()) return;
 
         try {
-            double bobot = Double.parseDouble(bobotText);
-            dao.update(new Kriteria(selectedId, kode, nama, ket, bobot));
-            loadData();
-            showMessage("Data berhasil diupdate!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            dao.update(new Kriteria(selectedId, tKode.getText(), tNama.getText(), tKet.getText(), Double.parseDouble(tBobot.getText())));
+            muatData();
+            info("Data berhasil diupdate!");
         } catch (NumberFormatException e) {
-            showMessage("Bobot harus berupa angka!", "Input Error", JOptionPane.ERROR_MESSAGE);
+            error("Bobot harus berupa angka desimal!");
         }
     }
 
-    private void hapusKriteria() {
-        int row = table.getSelectedRow();
-        if (row >= 0) {
-            int confirm = JOptionPane.showConfirmDialog(this, 
-                "Hapus data ini?", 
-                "Konfirmasi", 
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE);
-                
-            if (confirm == JOptionPane.YES_OPTION) {
-                int id = (int) model.getValueAt(row, 0);
-                dao.delete(id);
-                loadData();
-                showMessage("Data berhasil dihapus!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
-            }
-        } else {
-            showMessage("Pilih baris yang akan dihapus", "Info", JOptionPane.INFORMATION_MESSAGE);
+    private void hapus() {
+        if (selectedId == -1) {
+            info("Pilih data yang ingin dihapus.");
+            return;
+        }
+
+        int konfirmasi = JOptionPane.showConfirmDialog(this, "Yakin ingin menghapus data ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        if (konfirmasi == JOptionPane.YES_OPTION) {
+            dao.delete(selectedId);
+            muatData();
+            info("Data berhasil dihapus.");
         }
     }
 
-    private void clearForm() {
-        selectedId = -1;
-        tKode.setText("");
-        tNama.setText("");
-        tKet.setText("");
-        tBobot.setText("");
-        table.clearSelection();
-    }
-
-    private void showMessage(String message, String title, int messageType) {
-        JOptionPane.showMessageDialog(this, message, title, messageType);
-    }
-    
-    public void cetakLaporan() {
+    private void cetak() {
         try {
-            List<Kriteria> list = kriteria.getAll();
+            List<Kriteria> list = dao.getAll();
             ReportUtil.generatePdfReport(
                 list,
                 new String[]{"ID", "Kode", "Nama Kriteria", "Keterangan", "Bobot"},
-                "Laporan Data Kriteria",
+                "Laporan Kriteria",
                 "kriteria_report.pdf",
                 "Jakarta",
                 "IR. JANNUS SIMANJUNTAK"
             );
-            JOptionPane.showMessageDialog(this, "Laporan berhasil dibuat.");
+            info("Laporan berhasil dibuat.");
         } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Gagal cetak laporan: " + e.getMessage());
+            error("Gagal membuat laporan: " + e.getMessage());
         }
+    }
+
+    private boolean validasiInput() {
+        if (tKode.getText().trim().isEmpty() || tNama.getText().trim().isEmpty() || tBobot.getText().trim().isEmpty()) {
+            error("Kode, Nama, dan Bobot wajib diisi.");
+            return false;
+        }
+        return true;
+    }
+
+    private void kosongkanForm() {
+        selectedId = -1;
+        tKode.setText(""); tNama.setText(""); tKet.setText(""); tBobot.setText("");
+        table.clearSelection();
+    }
+
+    private void info(String pesan) {
+        JOptionPane.showMessageDialog(this, pesan, "Info", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void error(String pesan) {
+        JOptionPane.showMessageDialog(this, pesan, "Kesalahan", JOptionPane.ERROR_MESSAGE);
     }
 }
