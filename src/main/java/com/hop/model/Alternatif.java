@@ -1,6 +1,8 @@
 package com.hop.model;
 
-public class Alternatif {
+import java.util.List;
+
+public class Alternatif implements PdfExportable {
     private int id;
     private String nik;
     private String nama;
@@ -37,4 +39,17 @@ public class Alternatif {
     public String toString() {
         return nama + " (" + nik + ")";
     }
+    
+    @Override
+    public List<String> toPdfRow() {
+        return List.of(
+            String.valueOf(id),
+            nik,
+            nama,
+            jabatan,
+            alamat
+        );
+    }
+    
+    
 }

@@ -1,9 +1,11 @@
 package com.hop.model;
 
+import java.util.List;
+
 /**
  * Model untuk entitas Kriteria.
  */
-public class Kriteria {
+public class Kriteria implements PdfExportable {
     private int idKriteria;
     private String kodeKriteria;
     private String namaKriteria;
@@ -66,5 +68,10 @@ public class Kriteria {
     @Override
     public String toString() {
         return namaKriteria + " (" + kodeKriteria + ")";
+    }
+    
+    @Override
+    public List<String> toPdfRow() {
+        return List.of(String.valueOf(idKriteria),kodeKriteria,namaKriteria,ketKriteria,String.valueOf(bobot));
     }
 }

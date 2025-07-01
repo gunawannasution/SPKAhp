@@ -3,6 +3,7 @@ package com.hop.ui;
 import com.hop.dao.AlternatifDAO;
 import com.hop.dao.AlternatifDAOImpl;
 import com.hop.model.Alternatif;
+import com.hop.report.ReportUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -12,11 +13,12 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 
 public class AlternatifPanel extends JPanel {
+    private AlternatifDAO alternatifDAO = new AlternatifDAOImpl();
     private final DefaultTableModel model;
     private final JTable table;
     private final JTextField txtNik, txtNama, txtAlamat;
     private final JComboBox<String> cmbJabatan;
-    private final JButton btnSimpan, btnUbah, btnHapus;
+    private final JButton btnSimpan, btnUbah, btnHapus, btnCetak;
     private final AlternatifDAO dao;
     private int selectedId = -1;
 
@@ -53,6 +55,7 @@ public class AlternatifPanel extends JPanel {
         btnSimpan = createButton("Simpan", new Color(76, 175, 80));
         btnUbah = createButton("Ubah", new Color(33, 150, 243));
         btnHapus = createButton("Hapus", new Color(244, 67, 54));
+        btnCetak = createButton("Print", new Color(0, 150, 136));
 
         // Setup layout
         setupFormPanel();
@@ -143,6 +146,7 @@ public class AlternatifPanel extends JPanel {
         buttonPanel.add(btnSimpan);
         buttonPanel.add(btnUbah);
         buttonPanel.add(btnHapus);
+        buttonPanel.add(btnCetak);
         formPanel.add(buttonPanel, gbc);
 
         add(formPanel, BorderLayout.NORTH);
@@ -169,6 +173,7 @@ public class AlternatifPanel extends JPanel {
         btnSimpan.addActionListener(this::handleSimpan);
         btnUbah.addActionListener(this::handleUbah);
         btnHapus.addActionListener(this::handleHapus);
+        btnCetak.addActionListener(e->cetakLaporan());
     }
 
     private void handleSimpan(ActionEvent e) {
@@ -291,5 +296,23 @@ public class AlternatifPanel extends JPanel {
 
     private void showErrorMessage(String message, String title) {
         JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
+    }
+    
+    public void cetakLaporan() {
+        try {
+            List<Alternatif> list = alternatifDAO.getAll();
+            ReportUtil.generatePdfReport(
+                list,
+                new String[]{"ID", "NIK", "Nama", "Jabatan", "Alamat"},
+                "Laporan Data Alternatif",
+                "alternatif_report.pdf",
+                "Bandung",
+                "Gunawan"
+            );
+            JOptionPane.showMessageDialog(this, "Laporan berhasil dibuat.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal cetak laporan: " + e.getMessage());
+        }
     }
 }

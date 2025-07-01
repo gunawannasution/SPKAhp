@@ -9,10 +9,7 @@ import java.util.logging.Logger;
 import utils.DBConnection;
 
 public class AlternatifDAOImpl implements AlternatifDAO {
-    // Tidak menyimpan connection sebagai field class
-    public AlternatifDAOImpl() {
-        // Constructor kosong karena kita akan mendapatkan connection baru setiap operasi
-    }
+    public AlternatifDAOImpl() {}
 
     @Override
     public boolean insert(Alternatif alt) {

@@ -11,7 +11,7 @@ public class DBConnection {
             if (conn == null || conn.isClosed()) {
                 String url = "jdbc:mysql://localhost:3306/spkhop";
                 String user = "root";
-                String password = ""; // ganti sesuai konfigurasi kamu
+                String password = "root"; // ganti sesuai konfigurasi kamu
                 conn = DriverManager.getConnection(url, user, password);
             }
         } catch (SQLException e) {

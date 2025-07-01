@@ -3,6 +3,7 @@ package com.hop.ui;
 import com.hop.dao.KriteriaDAO;
 import com.hop.dao.KriteriaDAOImpl;
 import com.hop.model.Kriteria;
+import com.hop.report.ReportUtil;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -11,7 +12,8 @@ import java.awt.*;
 import java.util.List;
 
 public class KriteriaPanel extends JPanel {
-    // Warna modern
+    
+    private KriteriaDAO kriteria = new KriteriaDAOImpl();
     private static final Color PRIMARY_COLOR = new Color(63, 81, 181);
     private static final Color SECONDARY_COLOR = new Color(233, 30, 99);
     private static final Color BACKGROUND_COLOR = new Color(250, 250, 250);
@@ -21,7 +23,7 @@ public class KriteriaPanel extends JPanel {
     private DefaultTableModel model;
     private JTable table;
     private JTextField tKode, tNama, tKet, tBobot;
-    private JButton btnTambah, btnUpdate, btnHapus;
+    private JButton btnTambah, btnUpdate, btnHapus,btnCetak;
     private KriteriaDAO dao;
     private int selectedId = -1;
 
@@ -112,7 +114,7 @@ public class KriteriaPanel extends JPanel {
                 Object keterangan = model.getValueAt(row, 3);
                 tKet.setText(keterangan != null ? keterangan.toString() : "");
                 Object bobot = model.getValueAt(row, 4);
-                tBobot.setText(bobot != null ? bobot.toString() : "");
+                tBobot.setText(bobot != null ? bobot.toString() : "%.4f");
             }
         });
     }
@@ -183,21 +185,24 @@ public class KriteriaPanel extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.WEST;
         
         btnTambah = createStyledButton("Tambah", PRIMARY_COLOR);
         btnUpdate = createStyledButton("Update", new Color(255, 152, 0));
         btnHapus = createStyledButton("Hapus", SECONDARY_COLOR);
-
+        btnCetak = createStyledButton("Print", new Color(0, 150, 136));
+        
         btnTambah.addActionListener(e -> tambahKriteria());
         btnUpdate.addActionListener(e -> updateKriteria());
         btnHapus.addActionListener(e -> hapusKriteria());
+        btnCetak.addActionListener(e -> cetakLaporan());
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         btnPanel.setBackground(Color.WHITE);
         btnPanel.add(btnTambah);
         btnPanel.add(btnUpdate);
         btnPanel.add(btnHapus);
+        btnPanel.add(btnCetak);
         
         formPanel.add(btnPanel, gbc);
 
@@ -234,9 +239,11 @@ public class KriteriaPanel extends JPanel {
         ));
         
         button.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 button.setBackground(bgColor.darker());
             }
+            @Override
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 button.setBackground(bgColor);
             }
@@ -338,5 +345,23 @@ public class KriteriaPanel extends JPanel {
 
     private void showMessage(String message, String title, int messageType) {
         JOptionPane.showMessageDialog(this, message, title, messageType);
+    }
+    
+    public void cetakLaporan() {
+        try {
+            List<Kriteria> list = kriteria.getAll();
+            ReportUtil.generatePdfReport(
+                list,
+                new String[]{"ID", "Kode", "Nama Kriteria", "Keterangan", "Bobot"},
+                "Laporan Data Kriteria",
+                "kriteria_report.pdf",
+                "Jakarta",
+                "IR. JANNUS SIMANJUNTAK"
+            );
+            JOptionPane.showMessageDialog(this, "Laporan berhasil dibuat.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal cetak laporan: " + e.getMessage());
+        }
     }
 }
