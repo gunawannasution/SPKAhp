@@ -1,0 +1,8 @@
+CREATE TABLE hasil_alternatif (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_alternatif INT NOT NULL,
+    skor DOUBLE NOT NULL,
+    peringkat INT NOT NULL,
+    rekomendasi VARCHAR(50),
+    FOREIGN KEY (id_alternatif) REFERENCES alternatif(id)
+);
