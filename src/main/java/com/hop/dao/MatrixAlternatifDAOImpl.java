@@ -2,25 +2,16 @@ package com.hop.dao;
 
 import com.hop.model.MatrixAlternatif;
 import utils.DBConnection;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Implementasi DAO untuk entitas MatrixAlternatif.
- * Mengelola operasi CRUD pada tabel matrix_alternatif.
- */
+
 public class MatrixAlternatifDAOImpl implements MatrixAlternatifDAO {
     private static final Logger logger = Logger.getLogger(MatrixAlternatifDAOImpl.class.getName());
 
-    /**
-     * Tambah data MatrixAlternatif baru ke database.
-     * @param m objek MatrixAlternatif
-     * @return true jika berhasil, false jika gagal
-     */
     @Override
     public boolean insert(MatrixAlternatif m) {
         String query = "INSERT INTO matrix_alternatif (id_alternatif, id_kriteria, nilai) VALUES (?, ?, ?)";
@@ -38,12 +29,6 @@ public class MatrixAlternatifDAOImpl implements MatrixAlternatifDAO {
             return false;
         }
     }
-
-    /**
-     * Update nilai pada MatrixAlternatif berdasarkan id_alternatif dan id_kriteria.
-     * @param m objek MatrixAlternatif dengan nilai terbaru
-     * @return true jika update berhasil
-     */
     @Override
     public boolean update(MatrixAlternatif m) {
         String query = "UPDATE matrix_alternatif SET nilai = ? WHERE id_alternatif = ? AND id_kriteria = ?";
@@ -61,12 +46,6 @@ public class MatrixAlternatifDAOImpl implements MatrixAlternatifDAO {
         }
     }
 
-    /**
-     * Hapus data MatrixAlternatif berdasarkan id_alternatif dan id_kriteria.
-     * @param idAlternatif id alternatif
-     * @param idKriteria id kriteria
-     * @return true jika berhasil dihapus
-     */
     @Override
     public boolean delete(int idAlternatif, int idKriteria) {
         String query = "DELETE FROM matrix_alternatif WHERE id_alternatif = ? AND id_kriteria = ?";
@@ -83,10 +62,6 @@ public class MatrixAlternatifDAOImpl implements MatrixAlternatifDAO {
         }
     }
 
-    /**
-     * Ambil semua data MatrixAlternatif.
-     * @return list semua data MatrixAlternatif
-     */
     @Override
     public List<MatrixAlternatif> getAll() {
         List<MatrixAlternatif> semuaData = new ArrayList<>();
@@ -111,12 +86,6 @@ public class MatrixAlternatifDAOImpl implements MatrixAlternatifDAO {
         return semuaData;
     }
 
-    /**
-     * Cari data MatrixAlternatif berdasarkan id_alternatif dan id_kriteria.
-     * @param idAlternatif id alternatif
-     * @param idKriteria id kriteria
-     * @return objek MatrixAlternatif jika ditemukan, null jika tidak
-     */
     @Override
     public MatrixAlternatif getByAlternatifAndKriteria(int idAlternatif, int idKriteria) {
         String query = "SELECT * FROM matrix_alternatif WHERE id_alternatif = ? AND id_kriteria = ?";
@@ -142,11 +111,6 @@ public class MatrixAlternatifDAOImpl implements MatrixAlternatifDAO {
         return null;
     }
 
-    /**
-     * Ambil daftar MatrixAlternatif berdasarkan id_kriteria.
-     * @param idKriteria id kriteria
-     * @return list MatrixAlternatif untuk kriteria tersebut
-     */
     @Override
     public List<MatrixAlternatif> getByKriteria(int idKriteria) {
         List<MatrixAlternatif> dataKriteria = new ArrayList<>();

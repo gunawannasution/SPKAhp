@@ -5,14 +5,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
-import utils.DBConnection;
 import static utils.DBConnection.getConnection;
 
-public class MatrixDAOImpl implements MatrixDAO{
-    
-    public MatrixDAOImpl(){
-        
-    }
+public class MatrixDAOImpl implements MatrixDAO{    
+    public MatrixDAOImpl(){}
    
     @Override
     public boolean simpanMatrix(List<Matrix> matrixData){

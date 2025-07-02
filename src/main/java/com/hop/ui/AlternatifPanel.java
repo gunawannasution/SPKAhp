@@ -80,9 +80,7 @@ public class AlternatifPanel extends JPanel {
     }
 
     private JComboBox<String> buatComboBox() {
-        JComboBox<String> cb = new JComboBox<>(new String[]{
-                "Manager Teknik", "Manager Keuangan", "Tenaga Ahli", "Staf", "Karyawan"
-        });
+        JComboBox<String> cb = new JComboBox<>(new String[]{"Manager Teknik", "Manager Keuangan", "Tenaga Ahli", "Staf", "Karyawan"});
         cb.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cb.setBackground(Color.WHITE);
         return cb;
@@ -131,16 +129,22 @@ public class AlternatifPanel extends JPanel {
 
     // Tambah baris form dengan label & komponen input
     private void tambahFormRow(JPanel panel, GridBagConstraints gbc, int row, String label, JComponent comp) {
+        // Label
         gbc.gridx = 0;
         gbc.gridy = row;
-        gbc.anchor = GridBagConstraints.WEST;  // Label rata kiri
-
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.insets = new Insets(4, 4, 4, 4); // lebih rapat
         JLabel lbl = new JLabel(label);
-        lbl.setPreferredSize(new Dimension(70, 20)); // Lebar label seragam
+        lbl.setPreferredSize(new Dimension(60, 20)); // kecilkan jika perlu
         panel.add(lbl, gbc);
 
+        // Komponen input
         gbc.gridx = 1;
-        gbc.anchor = GridBagConstraints.WEST; // Input juga rata kiri
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         panel.add(comp, gbc);
     }
 
